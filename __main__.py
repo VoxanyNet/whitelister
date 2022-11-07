@@ -1,3 +1,5 @@
+import json
+
 from rcon.source import Client
 import discord
 from discord.ext import tasks
@@ -8,7 +10,7 @@ import embeds
 
 # load the config file
 with open("config.json", "r") as file:
-    config = file.read()
+    config = json.load(file)
 
 SERVER_IP = config["server_ip"]
 RCON_PASSWORD = config["rcon_password"]
@@ -17,6 +19,10 @@ BOT_TOKEN = config["token"]
 # create bot object
 intents = discord.Intents.default()
 bot = discord.Bot(intents=intents)
+
+@bot.event
+async def on_ready():
+    update_status.start()
 
 @bot.slash_command()
 async def whitelist(ctx, username):
@@ -54,7 +60,7 @@ async def update_status():
     # change the status of the bot with the updated amount of players
     await bot.change_presence(
         activity=discord.Activity(
-            type=discord.ActivityType.watching, name=f"{status.players.online} players online"
+            type=discord.ActivityType.watching, name=f"{status.players.online} players"
         )
     )
 
