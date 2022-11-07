@@ -54,13 +54,19 @@ async def whitelist(ctx, username):
 @tasks.loop(seconds=5)
 async def update_status():
     
-    # get the status of the minecraft server
-    status = JavaServer(SERVER_IP).status()
+    # get the player count of the minecraft server
+    player_count = JavaServer(SERVER_IP).status().players.online
+
+    if player_count == 1:
+        status_message = f"{player_count} player"
+
+    else:
+        status_message = f"{player_count} players"
 
     # change the status of the bot with the updated amount of players
     await bot.change_presence(
         activity=discord.Activity(
-            type=discord.ActivityType.watching, name=f"{status.players.online} players"
+            type=discord.ActivityType.watching, name=status_message
         )
     )
 
