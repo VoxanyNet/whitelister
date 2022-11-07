@@ -1,11 +1,18 @@
 from rcon.source import Client
 import discord
+from discord.ext import tasks
 import requests as r
+from mcstatus import JavaServer
 
 import embeds
 
-RCON_PASSWORD = "MovingDay2019"
-BOT_TOKEN = "MTAzMzg1MzI4MDAyNTA1OTM0OQ.GV76Hf.5Axqj-fccErGrojJ97DCpT-kejvQSfHFYXL6js"
+# load the config file
+with open("config.json", "r") as file:
+    config = file.read()
+
+SERVER_IP = config["server_ip"]
+RCON_PASSWORD = config["rcon_password"]
+BOT_TOKEN = config["token"]
 
 # create bot object
 intents = discord.Intents.default()
@@ -29,7 +36,7 @@ async def whitelist(ctx, username):
     uuid = resp.json()["id"]
 
     # create rcon client and whitelist requested user
-    with Client("voxany.net", 25575, passwd=RCON_PASSWORD) as client:
+    with Client(SERVER_IP, 25575, passwd=RCON_PASSWORD) as client:
         response = client.run(f"whitelist add {username}")
 
     success = embeds.Success(username, icon=f"https://crafatar.com/avatars/{uuid}")
@@ -37,5 +44,18 @@ async def whitelist(ctx, username):
     #print(type(response))
 
     await ctx.respond(embed=success)
+
+@tasks.loop(seconds=5)
+async def update_status():
+    
+    # get the status of the minecraft server
+    status = JavaServer(SERVER_IP).status()
+
+    # change the status of the bot with the updated amount of players
+    await bot.change_presence(
+        activity=discord.Activity(
+            type=discord.ActivityType.watching, name=f"{status.players.online} players online"
+        )
+    )
 
 bot.run(BOT_TOKEN)
